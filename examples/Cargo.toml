@@ -1,7 +1,9 @@
-[package]
-name = "examples"
-version = "0.1.0"
-edition = "2024"
+[workspace]
+members = ["ex_polars"]
+resolver = "3"
 
-[dependencies]
-polars = "0.53.0"
+[workspace.package]
+version = "0.1.1"
+edition = "2024"
+homepage = "https://osaal.dev"
+license-file = "../LICENSE"

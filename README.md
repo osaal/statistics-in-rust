@@ -51,9 +51,27 @@ On the first attempt, it will install the necessary Rust toolchain. After this i
 
 The book is divided into two major directories: `src` and `examples`.
 
+### Text source `src`
+
 The `src` directory contains the text chapters as Markdown files. Edit these when you need to change/add to text in some way.
 
-The `examples` directory is a Cargo project containing all the Rust example code, as well as the project dependencies. Edit these when you need to change/add to the code examples.
+### Example code source `examples`
+
+The `examples` directory is a Cargo workspace containing all the Rust example code, as well as the project dependencies. Edit these when you need to change/add to the code examples.
+
+Each `$NAME.md` chapter has a corresponding `/examples/$NAME` directory, representing a Cargo crated named `examples_$NAME`.
+
+To build the source code of a single example, use:
+
+```shell
+cargo build -p examples_$NAME
+```
+
+and to build all examples (required for pull requests), use:
+
+```shell
+cargo build
+```
 
 ## Seeing changes
 
@@ -70,5 +88,7 @@ This opens a live-updating website view in your browser. Each time you save a Ma
 Contributions require you to confirm that the `/examples` Cargo project builds on your machine, *regardless of if you edited the code or not*.
 
 Call `cargo test` and `cargo build` in the directory and attach the output to your pull request.
+
+Please note that **all** examples must be tested and built for a pull request, not just the one(s) you have touched (in case of dependency issues).
 
 **Pull requests without `cargo test` and `cargo build` outputs will not be accepted.**

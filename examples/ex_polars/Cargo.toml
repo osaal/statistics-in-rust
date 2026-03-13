@@ -1,0 +1,21 @@
+# Versioning and some other metadata is inherited from the workspace
+# to avoid having to define them in every chapter.
+# NB: This workspace is treated as having a global version
+# DO NOT define a package-specific version.
+
+[package]
+version.workspace = true
+edition.workspace = true
+homepage.workspace = true
+license-file.workspace = true
+
+name = "ex_polars"
+authors = ["Oliver Saal"]
+description = "An example of using Polars for statistical work in Rust"
+
+[lib]
+name = "ex_polars"
+path = "src/lib.rs"
+
+[dependencies]
+polars = "0.53.0"
