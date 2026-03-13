@@ -1,3 +1,7 @@
 # Summary
 
-- [Getting Started](./ch_01.md)
+[Getting Started](./getting_started.md)
+
+# Tools
+
+- [Polars](./tools/polars.md)

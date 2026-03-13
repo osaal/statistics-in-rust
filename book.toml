@@ -2,3 +2,6 @@
 title = "statistics-in-rust"
 authors = []
 language = "en"
+
+[output.html.playground]
+runnable = false
