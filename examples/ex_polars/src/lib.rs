@@ -28,3 +28,27 @@ fn empty_df() -> Result<(), TestError> {
     // ANCHOR_END: empty_df
     Ok(())
 }
+
+#[inline(always)]
+#[allow(dead_code)]
+fn read_csv() -> Result<(), TestError> {
+    // ANCHOR: read_csv
+    use polars::prelude::*;
+    let df = CsvReadOptions::default()
+        .try_into_reader_with_file_path(Some("src/res/myfile.csv".into()))
+        .unwrap()
+        .finish()
+        .unwrap();
+
+    assert_eq!(
+        df,
+        df!(
+            "Var1" => [1,3,6,3,9],
+            "Var2" => [1,7,7,4,1],
+            "Var3" => [2,2,8,8,0],
+        )
+        .unwrap()
+    );
+    // ANCHOR_END: read_csv
+    Ok(())
+}
