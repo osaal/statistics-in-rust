@@ -47,3 +47,26 @@ let _ = DataFrame::new_infer_height(
 ```
 
 In other words: for each pair of name and data slice you give it in the macro, it creates a `Column` object. These objects store the actual data along with some potential metadata.
+
+> [!WARNING]
+> The `df!` macro requires each data vector to be the same length, so that there is no missing data in the resulting DataFrame.
+
+### Read a CSV file
+
+You can also easily create a DataFrame from an existing CSV file:
+
+```rust
+{{#include ../../examples/ex_polars/src/lib.rs:read_csv}}
+```
+
+1.  Create a new `CsvReadOptions` with the `Default` method.
+2.  Call its `try_into_reader_with_file_path()` method to try to read in a CSV file matching the default read options from the specified path.
+    -   Note, that you must wrap the path in a `Some()` variant and call `.into()` on the string literal itself to convert it from a string literal to a `PathBuf` (see the documentation of the method).
+3.  If the reading is successful, you can call `finish()` on the resulting `Some()` variant and unwrap the final product.
+
+Note that both reading in CSVs and finishing the reading are fallible - hence the `unwrap()` calls in the example code.
+
+> [!WARNING]
+> In real code, you should always prefer to handle the `Some(data)` and `None` cases, e.g., through pattern matching, rather than unwrapping. Unwrapping a `None` will make your program panic and crash, even if a `None` is okay to receive at a particular code point!
+
+The `assert_eq!()` is there to show you that the same result could have been accomplished by calling the `df!` macro, just to show that the two produce similar output but for different use cases.
