@@ -1,0 +1,8 @@
+# mdBook
+book
+examples/target
+
+# devenv & direnv
+.devenv.flake.nix
+.devenv
+.direnv
