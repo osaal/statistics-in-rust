@@ -1,0 +1,27 @@
+{
+	"Add example function": {
+		"scope": "rust",
+		"prefix": "add fun",
+		"body": [
+			"#[inline(always)]",
+			"#[allow(dead_code)]",
+			"fn $0() -> Result<(), TestError> {",
+			"    // ANCHOR: $0",
+			"    // ANCHOR_END: $0",
+			"    Ok(())",
+			"}"
+		],
+		"description": "Add a formatted example function for use in the Statistics in Rust textbook"
+	},
+	"Add test function": {
+		"scope": "rust",
+		"prefix": "add test",
+		"body": [
+			"#[test]",
+			"fn test_$0() {",
+			"    assert!($0().is_ok())",
+			"}"
+		],
+		"description": "Add a formatted test for use in the Statistics in Rust textbook"
+	}
+}
