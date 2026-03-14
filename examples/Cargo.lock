@@ -552,11 +552,11 @@ dependencies = [
 
 [[package]]
 name = "ex_from_r_to_rust"
-version = "0.2.0"
+version = "0.2.1"
 
 [[package]]
 name = "ex_polars"
-version = "0.2.0"
+version = "0.2.1"
 dependencies = [
  "polars",
 ]

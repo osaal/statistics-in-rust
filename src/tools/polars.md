@@ -69,4 +69,42 @@ Note that both reading in CSVs and finishing the reading are fallible - hence th
 > [!WARNING]
 > In real code, you should always prefer to handle the `Some(data)` and `None` cases, e.g., through pattern matching, rather than unwrapping. Unwrapping a `None` will make your program panic and crash, even if a `None` is okay to receive at a particular code point!
 
-The `assert_eq!()` is there to show you that the same result could have been accomplished by calling the `df!` macro, just to show that the two produce similar output but for different use cases.
+> [!TIP]
+> The `assert_eq!()` is there to show you that the same result could have been accomplished by calling the `df!` macro, just to show that the two produce similar output but for different use cases.
+
+It is best to use the `CsvReadOptions::Default()` method every time, since there are a **lot** of options to set - 21 options to be exact!
+
+However, if you need to change CSV options, you may do so either by using the associated `with_X()` methods (recommended), or by modifying the struct fields directly (less recommended).
+
+#### CSV read options {.advanced}
+
+This section is not necessary reading, but can help you figure out whether your CSV files are being read correctly.
+
+The full field listing of `CsvReadOptions` (i.e., the options themselves), is available in the [documentation](https://docs.rs/polars-io/0.53.0/polars_io/csv/read/struct.CsvReadOptions.html). Some important settings are:
+
+-   `path`: Store the file path directly in the options object, in case you need to call it multiple times or want a shorter method chain.
+-   `n_rows`: How many rows should be read in?
+-   `columns`: Which columns should be read in?
+-   `projection`: Which columns, based on their zero-started index, should be read in?
+-   `schema`: Which Polars-internal data types should be used for each column? (Default behaviour is to infer this from the file)
+-   `parse_options?`: Which CSV-specific parsing options should be used?
+
+The last one deserves its own treatment here. `CsvReadOptions.parse_options` takes an `Arc<CsvParseOptions>`. It can also be created without using a smart pointer through the `CsvReadOption::with_parse_options(CsvParseOptions)` method.
+
+Parse options are themselves numerous, but important:
+
+| Field name | Default value | Description |
+|--|--|--|
+| `separator` | `b','` | Which separator is used between the cells? |
+| `quote_char` | `Some(b'"')` | Which character is used to quote strings? |
+| `eol_char` | `b'\n'` | Which character marks the end of a line? |
+| `encoding` | `CsvEncoding::default()` | Which text encoding is used? |
+| `null_values` | `None` | Which values will be interpreted as missing, if any? |
+| `missing_is_null` | `true` | Should missing fields be treated as null, following the treatment of `null_values`? |
+| `truncate_ragged_lines` | `false` | Should lines with more columns than the `Schema` be truncated? |
+| `comment_prefix` | `None` | What is the line prefix for a comment line, if any? |
+| `try_parse_dates` | `false` | Should dates be attempted to be parsed? If failed, they become strings. |
+| `decimal_comma` | `false` | Should a comma character denote the decimal separator?` |
+
+
+
