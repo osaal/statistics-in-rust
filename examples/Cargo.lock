@@ -552,23 +552,27 @@ dependencies = [
 
 [[package]]
 name = "ex_from_r_to_rust"
-version = "0.3.4"
+version = "0.3.5"
 
 [[package]]
 name = "ex_library_1"
-version = "0.3.4"
+version = "0.3.5"
 
 [[package]]
 name = "ex_library_2"
-version = "0.3.4"
+version = "0.3.5"
 
 [[package]]
 name = "ex_library_3"
-version = "0.3.4"
+version = "0.3.5"
+
+[[package]]
+name = "ex_library_4"
+version = "0.3.5"
 
 [[package]]
 name = "ex_polars"
-version = "0.3.4"
+version = "0.3.5"
 dependencies = [
  "polars",
 ]

@@ -378,3 +378,119 @@ There are many more methods, and I encourage readers to get familiar with them. 
 Next up, we are going to get generic.
 
 [^2]: Technically, `self` is also an input with the type bound of being `Sized`, but we will ignore this for now - the `Sized` trait is fairly advanced Rust knowledge.
+
+## Generic Functions
+
+Once again, let's remind ourselves of our function:
+
+```rust
+{{#include ../examples/ex_library_4/src/lib.rs:v1-1}}
+```
+
+Wouldn't it be nice if we could allow other collection types than just `Vec<usize`? With trait bounds, we can do just that!
+
+In the previous section, we learned how trait bounds are used in the standard library to make trait methods generic. Turns out, a *lot* of things can be made generic, including function inputs and outputs.
+
+Before we start: what does 'generic' mean? Rust uses a process called **monomorphisation**. Whenever the compiler finds a generic trait bound, it starts looking for every place in the codebase where the generic item is actually used. It checks what types are used with it, as well as that they fulfill the trait bound requirement. If everything is okay, it creates a new version of the item, with the types specified to the types that were using it. For instance, the following function:
+
+```rust
+{{#include ../examples/ex_library_4/src/lib.rs:v1-2}}
+```
+
+when used with the types `i32` and `String` would turn into something like:
+
+```rust,ignore
+    fn do_something_1(x: i32) { ... }
+    fn do_something_2(x: String) { ... }
+```
+
+> The above example will not compile. It is an example of how the compiler-generated code can be conceptualized.
+
+This is nice, because it does two things: firstly, we do not need to write unique functions for every use case ourselves, and secondly, we can implement the function for *any* `T` that implements `Debug`, even when we have no idea what type `T` actually is!
+
+In order to make our function generic over different types of `x`, we therefore need to identify which traits of `x` are necessary for our function to work. We can do that by looking at how we use `x`:
+
+-   Firstly, we call `x.len()`, meaning that `x` must have a `.len()` method.
+-   Secondly, we call `x.into_iter()`, meaning that `x` must have an `.into_iter()` method.
+-   Finally, our fold must have the same type in the `init` as the accumulator and the element, i.e., we need to bind the item type contained in `x` to `usize`.
+
+Those are the only requirements our function has for `x`! Let's deal with the second one first, since it actually also deals with the third, and is the simpler one.
+
+The method `into_iter()` is offered by the trait `IntoIterator`. Thus, if `x` is guaranteed to be `IntoIterator`, the method will be available regardless of the type of `x`. Further, looking at the standard library documentation for `IntoIterator`, we see that it has two **associated types**, the former of which is important to us:
+
+```rust,ignore
+pub trait IntoIterator {
+    type Item;
+    type IntoIter: Iterator<Item = Self::Item>;
+    
+    // Required method
+    fn into_iter(self) -> Self::IntoIter;
+}
+```
+
+An associated type is a generic type connected to a trait. This generic type is used to set further bounds inside the trait. In our case, the type `Item` is used to make sure that whatever `Iterator` object the method `into_iter()` returns, its items must be of type `Item`. Thus, we can use this type to restrict `x`'s item types: `x: T where T: IntoIterator<Item = usize>`.
+
+However, if we tried to add that, our function would not compile. The reason is that we have not guaranteed that `x` has a `len()` function.
+
+Now, we hit a little snag. Looking at the documentation, `len()` is actually a method for the `Vec` type, not a trait method. Thus, we cannot give our function a trait bound that guarantees the availability of `len()`, except for requiring `Vec` types. However, we can work around this, but we need to make an important decision.
+
+An iterator cannot know its own length off the get-go, because at any point in time, an iterator only contains the next item. Thus, to count the "length" of an iterator, we would need to iterate through all of the elements using the `Iterator::count()` method. This will (probably) increase our processing time as compared to using a vector. However, it gives us the genericity we desire, so that users could use any item, as long as it converts into an iterator.
+
+To not belabour the point: we will decide to make this trade-off for the sake of pedagogy. However, in the real world, we would have to consider the use cases more thoroughly, especially if we were concerned about optimal speed.
+
+Let's add the trait bounds and change the code to work with iterators:
+
+```rust
+{{#include ../examples/ex_library_4/src/lib.rs:v2}}
+```
+
+You might notice I snuck in another type restriction - I'm sorry, I couldn't help myself. The reason is that `Iterator::count()` consumes the iterator, and we need to walk through it twice - once for the length, and once for the tally. Therefore, by adding the extra restriction that `x` must be cloneable, we can call `.clone()` on it to get a copy of the data. 
+
+Let's make sure that our implementation works by adding a test and running it. We can use another collection data type that already implements `IntoIterator`, the simple array:
+
+```rust
+{{#include ../examples/ex_library_4/src/lib.rs:v3}}
+```
+
+Here, we make sure that the output is exactly the same, regardless of if we use a vector or a slice. Lo and behold, it is:
+
+```
+(truncated output)
+running 3 tests
+test tests::divide_by_zero ... ok
+test tests::generic_input ... ok
+test tests::test_mean ... ok
+
+test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+```
+
+## Finishing Up
+
+We have accomplished quite a lot. Our statistical mean function is:
+
+-   Generic over any data type that implements `IntoIterator<Item = usize> + Clone`
+-   Checks for zero division errors and returns an appropriate error message if needed.
+-   Calculates the arithmetic mean and returns a floating-point decimal of the result.
+
+Naturally, there are many more things we could do. However, because nobody wants to read a 30.000-word tutorial essay, I will leave you with a few practice tasks. Do them if you wish, or start delving into other statistical work in R.
+
+For readability, below is the entirety of our final code:
+
+```rust
+{{#include ../examples/ex_library_4/src/lib.rs:v4}}
+```
+
+### Further Practice 
+
+The tasks are ordered approximately by difficulty.
+
+1.  Right before returning the result, our `mean()` function forcibly converts the tally and lengths from `usize` into `f64`. This could pose an issue if [`usize > f64::MAX`](https://doc.rust-lang.org/std/primitive.f64.html#associatedconstant.MAX). If this happens, the program will crash. **How would you catch this issue and return an appropriate error instead?**
+2.  For optimal flexibility, our `mean()` function should also work when used in functors such as `map()`, over an iterator of iterators (e.g., calculating the arithmetic mean for every variable in a dataset). **Try to use the function in such a context and see if it works as expected. Why or why not? If not, what changes would need to be made to accommodate this?**
+3.  When we first implemented the tally using a for-loop, we noted how it runs the risk of overflowing `usize`. However, we no longer have the same implementation. **What would happen if the sum of all elements in `x` is larger than `usize::MAX`?** Try to use the documentation to solve the issue before testing it in code!
+4.  There are multiple different means, not just the arithmetic mean. **Try to implement the [geometric mean](https://en.wikipedia.org/wiki/Geometric_mean) yourself, in the same way as the arithmetic mean.**
+5.  (Hard) Let's take it a step further: **change it so that the `mean()` function can be used to calculate either the arithmetic or the geometric mean, depending on user selection.** Hint: Use an enum in the parameters as a "settings" object. Bonus points if you also implement a sensible `Default`.
+
+If you want, you can leave your solution(s) to the problems in the [Discussions section](https://github.com/osaal/statistics-in-rust/discussions) of this book's GitHub repository. With your explicit permission (don't worry, I will ask before!), I would like to include some of them into a later version of the book as suggested answers.
+
+
+
