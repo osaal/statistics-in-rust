@@ -1,4 +1,6 @@
 #![allow(dead_code)]
+#![allow(unused_imports)]
+#![allow(unused_variables)]
 
 mod v1 {
     // ANCHOR: v1
@@ -79,10 +81,12 @@ mod v5 {
     }
 }
 
+#[allow(unused_assignments)]
 mod v6 {
     use std::error::Error;
     use std::fmt::Display;
 
+    #[allow(clippy::needless_range_loop)]
     // ANCHOR: v6
     pub fn mean(x: Vec<usize>) -> Result<f64, MeanError> {
         let length = x.len();
@@ -108,6 +112,7 @@ mod v7 {
     use std::error::Error;
     use std::fmt::Display;
 
+    #[allow(clippy::needless_range_loop)]
     // ANCHOR: v7
     pub fn mean(x: Vec<usize>) -> Result<f64, MeanError> {
         let length = x.len();

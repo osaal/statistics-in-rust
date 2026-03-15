@@ -9,6 +9,7 @@ mod v1 {
     pub fn mean(x: Vec<usize>) -> Result<f64, MeanError> {
         let length = x.len();
         let mut tally = 0;
+        #[allow(clippy::needless_range_loop)]
         for i in 0..length {
             tally += x[i];
         }
@@ -26,6 +27,9 @@ mod v1 {
     }
 
     // ANCHOR: v1
+    // ...
+    // `./src/lib.rs`
+    // > (most commonly) at the end of file
     #[cfg(test)]
     mod tests {
         use super::*;
@@ -42,6 +46,7 @@ mod v2 {
     pub fn mean(x: Vec<usize>) -> Result<f64, MeanError> {
         let length = x.len();
         let mut tally = 0;
+        #[allow(clippy::needless_range_loop)]
         for i in 0..length {
             tally += x[i];
         }
@@ -88,6 +93,7 @@ mod v3 {
             return Err(MeanError::DivideByZero);
         }
         let mut tally = 0;
+        #[allow(clippy::needless_range_loop)]
         for i in 0..length {
             tally += x[i];
         }
@@ -145,6 +151,7 @@ mod v4 {
     use std::error::Error;
     use std::fmt::Display;
 
+    #[allow(clippy::needless_range_loop)]
     // ANCHOR: v4
     pub fn mean(x: Vec<usize>) -> Result<f64, MeanError> {
         let length = x.len();

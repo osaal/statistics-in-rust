@@ -55,7 +55,7 @@ fn string_manipulation() -> Result<(), TestError> {
     let hello = String::from("Hello");
     let world = String::from("world!");
 
-    let mut mystring = String::from(hello.clone());
+    let mut mystring = hello.clone();
     mystring.push_str(", ");
     mystring.push_str(&world);
 

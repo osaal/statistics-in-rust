@@ -14,6 +14,7 @@ mod v1 {
         }
 
         let mut tally = 0;
+        #[allow(clippy::needless_range_loop)]
         for i in 0..length {
             tally += x[i];
         }
