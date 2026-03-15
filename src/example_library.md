@@ -284,4 +284,97 @@ Wait, we have actually fulfilled our MVP - and even gone beyond it. Congratulati
 
 Next up, let's see if we can't make this function prettier, more idiomatic, and more usable.
 
+## Functional Code
 
+As a reminder, here is our current `mean()` function:
+
+```rust
+{{#include ../examples/ex_library_3/src/lib.rs:v1}}
+```
+
+I mentioned previously that there are two main ways to iterate through elements in a container (e.g., a vector), a for-loop and a fold. We implemented the prior, but the latter is much more idiomatic to Rust.
+
+Folds are a common pattern in functional programming. The idea is that we apply a function to each element of the collection, returning the collection less the "used" element as well as an **accumulator**. If you think about it, our for-loop does something similar: for each element in the vector, it adds the element to the previous tally.
+
+The difference is slight, but it can have serious ramifications: for a for-loop to work like a fold, we need a mutable variable outside the scope of the for-loop. This makes the variable potentially mutable even *after* having done the for-loop. For instance, a line of code after the loop could reset the tally to zero, regardless of what it contains.
+
+A fold does not allow this: the accumulator is internal to the fold only, and what is returned is functionally (pardon the pun) immutable. The end result can be stored immutably, so that nothing can affect it. Voilá, guaranteed function purity!
+
+In Rust, vectors do not implement a folding method automatically. However, vectors implement a trait called `IntoIterator`, which allows them to become something implementing the `Iterator` trait - which, in turn, *does* allow for folding! This conversion is done by calling `Vec.into_iter()`.
+
+The `Iterator` trait has [76 (!) different methods](https://doc.rust-lang.org/std/iter/trait.Iterator.html), but right now, we are only interested in one: `Iterator::fold()`. Hold on to your hat, because a lot of new stuff is about to come up. Let's start by looking at the function signature for `fold()`:
+
+```rust,ignore
+fn fold<B, F>(self, init: B, f: F) -> B
+where
+    Self: Sized,
+    F: FnMut(B, Self::Item) -> B,
+```
+
+That... is a mouthful. The method is generic, meaning that all of its inputs and outputs can take multiple different type forms, as long as they satisfy certain **trait bounds**. In this case, the method takes two inputs and returns one output[^2]: an `init` object, whose type must be the same as the output, and an `f` object.
+
+The `f` object is what is called a **closure**. In some languages, this is also called an **anonymous function**. A closure is a function written in special syntax:
+
+```rust,ignore
+let f = |a, b| a + b
+```
+
+The idea of closures is that **functions are data types themselves**. This might sound confusing, but it is actually extremely powerful, as it allows us to have functions that create other functions (so-called **functors**), as well as pass functions around as data between different functions, or even store functions in vectors.
+
+In the case of `fold()`, `f` is a closure that implements `FnMut(B, Self::Item) -> B`. Breaking this line apart, `f` must be a function that takes its input mutably, i.e., is allowed to mutate the input. The input must have some associated type `Self::Item` (which we can determine ourselves), as well as a starting item `b`. Finally, it must return something of type `B`, i.e., the same type that `init` was set to, and the same type that the closure took as its first parameter.
+
+What does all of this do? Well, `fold()` starts with the value of `init`, and for each element in the parent `Iterator` object, it applies the closure `f`. The return of that closure is used as the `init` value for the next iteration, i.e., for the next element in the iterator. Once there are no more iterators, the final output value of the closure `f` is returned.
+
+But how do we know what the closure is supposed to look like? We can take a peek at the documentation. Quote:
+
+> `fold()` takes two arguments: an initial value, and a closure with two
+arguments: an ‘accumulator’, and an element. The closure returns the value that
+the accumulator should have for the next iteration. (Source: [std::iter::Iterator::fold()](https://doc.rust-lang.org/std/iter/trait.Iterator.html#method.fold))
+
+Thus, we can directly replace our for-loop with the folding pattern:
+
+```rust
+{{#include ../examples/ex_library_3/src/lib.rs:v2}}
+```
+
+To make sure we understand what is going on, let's work through the new one-liner:
+
+1.  We take `x` and we call it's `into_iter()` method. We know this exists since `x` is restricted to be a `Vec`.
+2.  The method returns some type of iterator, which we don't know. The only thing we need to know is that whatever type it is, it implements `Iterator`. Therefore, we can chain a call to `Iterator::fold()`.
+3.  We tell the fold to start with `init = 0`, which the compiler can infer to be the same type as the return type of the closure as well as the first element of the closure parameter list, i.e., the accumulator.
+4.  We then give fold a closure with two parameters inside vertical bars: an accumulator and an element.
+5.  Finally, we define the closure to sum the accumulator and the element together and return the result in one line.
+
+What will happen? Let's think through the case of `x == vec![1, 2, 3]`:
+
+1.  The vector is turned into an iterator, which yields one element at a time.
+2.  Fold starts with the closure arguments `|0, 1|`. The first argument is `init`, the second is the first element of the iterator, `1`.
+3.  Fold sums them together and returns the result `0 + 1 = 1`.
+4.  Fold then takes the result `1` and starts the second closure iteration with the arguments `|1, 2|` - the previous result, and the second iterator element.
+5.  Fold calculates `1 + 2 = 3`and returns the output.
+6.  Fold runs a third time, with `|3, 3|`, and returns `6`.
+7.  Finally, fold sees that there are no more elements, so it returns the final result, `6`.
+
+This is, admittedly, quite a complex way to write an accumulating sum. However, this way of writing code is extremely powerful for data analysis. We could add all sorts of conditional checks inside the closure (e.g., only add even elements, or add all numbers except 42).
+
+> [!NOTE]
+> We could, in theory, even include the length calculation in the closure. One way to do this is to return a tuple, where the first number represents the number of times the closure has been called (incremented inside the closure), and the second represents the actual closure. However, why would this be problematic in our case? Think of what information we need in order to safely execute the function.
+
+Iterators are also, in general, much more efficient than for-loops. In many cases, method chaining could imply that we need to iterate through the dataset multiple times. For instance, we might first want to select a subset of the data, then a subset of that subset, then do some transformation, then finally calculate a single value out of the data. However, Rust iterators are (for the most part), **lazy**: they will not actually do anything until a **collection method** is called on them. The two most common collection methods are `.next()` and `.collect()`. The former yields the next element in the iterator, and allows you to "step through" the iterator one element at a time. The latter runs through the entire iterator, applies everything that was added in the chain, and returns the final output in a collection type (usually a vector).
+
+Before we're done here, I want to mention some other traditional functional patterns, all implemented for `Iterator`:
+
+-   `zip()` combines two iterators A and B into an iterator whose elements are a tuple (A, B). In other words, the number of elements stays the same, but the elements are paired up. Zips can be undone with `unzip()`, yielding two iterators.
+-   `map()` calls a given closure on each element of the iterator, returning the result. Note, that simply calling `iter.map()` will not actually yield anything. You have to either iterate through the elements (with `.next()` or `.collect()`), or do something else with the returned iterator before iterating through everything. This allows for chaining multiple operations before actually executing all of them.
+-   `for_each()` is similar to `map()`, except that it does not return anything. It is used for **side effects**, i.e., when the closure does something outside of the function (such as sends a message to a server).
+-   `filter()` applies a predicate closure to each element, returning `true` or `false` for each element. Like `map()`, the result needs to either be collected somehow, or transformed into another iterator with another functional pattern. As the name suggests, this can be used to conditionally select elements for further analysis, such as "select only data above the mean".
+-   `filter_map()` combines `filter()` and `map()`. Its closure has to return an Optional value, and once collected, only the `Some()` values are actually modified by the mapping part of the closure. It can be used to replace a chain of `iter.map().filter().map()` in one go.
+-   `enumerate()` does what the above infobox suggested we could, but won't, do: it creates an iterator that contains a tuple of `(i, item)`, where `i` is the index of the iteration.
+-   `flatten()` takes an iterator and removes all nested iterator structures. For instance, if you previously mapped a closure that returned iterators for each element, `flatten()` will flatten those returned iterators back into a single big iterator.
+-   `flat_map()` replaces `iter.map().flatten()`.
+
+There are many more methods, and I encourage readers to get familiar with them. Perhaps one day this book might contain a full listing and description of them, but not today...
+
+Next up, we are going to get generic.
+
+[^2]: Technically, `self` is also an input with the type bound of being `Sized`, but we will ignore this for now - the `Sized` trait is fairly advanced Rust knowledge.

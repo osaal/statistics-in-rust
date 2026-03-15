@@ -1,9 +1,9 @@
 [workspace]
-members = ["ex_polars", "ex_from_r_to_rust", "ex_library_1", "ex_library_2"]
+members = ["ex_polars", "ex_from_r_to_rust", "ex_library_1", "ex_library_2", "ex_library_3"]
 resolver = "3"
 
 [workspace.package]
-version = "0.3.3"
+version = "0.3.4"
 edition = "2024"
 homepage = "https://osaal.dev"
 license-file = "../LICENSE"
