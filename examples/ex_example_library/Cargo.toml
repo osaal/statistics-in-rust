@@ -1,0 +1,13 @@
+[package]
+version.workspace = true
+edition.workspace = true
+homepage.workspace = true
+license-file.workspace = true
+
+name = "ex_example_library"
+authors = ["Oliver Saal"]
+description = "Toy statistical library for the book Statistics in Rust."
+
+[lib]
+name = "ex_example_library"
+path = "src/lib.rs"

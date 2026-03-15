@@ -1,4 +1,4 @@
-# Getting Started
+# Install Rust
 
 This chapter will help you get your dependencies set up.
 
