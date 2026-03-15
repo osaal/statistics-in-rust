@@ -62,7 +62,7 @@ mod v5 {
     // ANCHOR: v5
     pub fn mean(x: Vec<usize>) -> Result<f64, MeanError> {
         let length = x.len();
-        for i in 0..length - 1 {
+        for i in 0..length {
             // Do something with x[i]?
         }
         Ok(0.)
@@ -87,7 +87,7 @@ mod v6 {
     pub fn mean(x: Vec<usize>) -> Result<f64, MeanError> {
         let length = x.len();
         let mut tally = 0;
-        for i in 0..length - 1 {
+        for i in 0..length {
             tally += x[i];
         }
         Ok(0.)
@@ -112,7 +112,7 @@ mod v7 {
     pub fn mean(x: Vec<usize>) -> Result<f64, MeanError> {
         let length = x.len();
         let mut tally = 0;
-        for i in 0..length - 1 {
+        for i in 0..length {
             tally += x[i];
         }
         let result = tally as f64 / length as f64;
